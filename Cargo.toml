@@ -6,6 +6,9 @@ rust-version = "1.85"
 license = "MIT"
 description = "Forensic-grade Apple Partition Map (APM) reader — Driver Descriptor Map + partition entries (name, type, start, count) from a byte buffer"
 repository = "https://github.com/SecurityRonin/apm-forensic"
+homepage = "https://github.com/SecurityRonin/apm-forensic"
+documentation = "https://docs.rs/apm-forensic"
+readme = "README.md"
 keywords = ["forensics", "apple", "partition", "apm", "dfir"]
 categories = ["parser-implementations", "filesystem"]
 
