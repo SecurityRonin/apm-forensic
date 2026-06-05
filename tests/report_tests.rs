@@ -28,8 +28,14 @@ fn report_includes_header_and_partitions() {
     let a = analyse(&build_apm()).unwrap();
     let r = text_report(&a);
     assert!(r.contains("APM Forensic Analysis"), "{r}");
-    assert!(r.contains("Macintosh"), "partition name should appear:\n{r}");
-    assert!(r.contains("Apple_partition_map"), "type should appear:\n{r}");
+    assert!(
+        r.contains("Macintosh"),
+        "partition name should appear:\n{r}"
+    );
+    assert!(
+        r.contains("Apple_partition_map"),
+        "type should appear:\n{r}"
+    );
     assert!(r.contains("block size"), "{r}");
 }
 

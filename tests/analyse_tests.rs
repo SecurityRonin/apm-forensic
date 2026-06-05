@@ -3,7 +3,11 @@
 use apm_forensic::{analyse, AnomalyKind, Error};
 
 fn real_map() -> Vec<u8> {
-    std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/apm_map.bin")).unwrap()
+    std::fs::read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/apm_map.bin"
+    ))
+    .unwrap()
 }
 
 // ── Builders for synthetic APM images ────────────────────────────────────────
@@ -36,11 +40,21 @@ fn build(device_blocks: u32, entries: &[Ent]) -> Vec<u8> {
 }
 
 fn ent(type_name: &'static str, start: u32, count: u32, n: u32) -> Ent {
-    Ent { type_name, start, count, map_count: n }
+    Ent {
+        type_name,
+        start,
+        count,
+        map_count: n,
+    }
 }
 
 fn kinds(d: &[u8]) -> Vec<AnomalyKind> {
-    analyse(d).unwrap().anomalies.into_iter().map(|a| a.kind).collect()
+    analyse(d)
+        .unwrap()
+        .anomalies
+        .into_iter()
+        .map(|a| a.kind)
+        .collect()
 }
 
 // ── Real data ────────────────────────────────────────────────────────────────
@@ -78,28 +92,53 @@ fn non_apm_errors() {
 
 #[test]
 fn well_formed_synthetic_is_clean() {
-    let d = build(1000, &[ent("Apple_partition_map", 1, 63, 2), ent("Apple_HFS", 64, 900, 2)]);
-    assert!(analyse(&d).unwrap().anomalies.is_empty(), "got {:?}", kinds(&d));
+    let d = build(
+        1000,
+        &[
+            ent("Apple_partition_map", 1, 63, 2),
+            ent("Apple_HFS", 64, 900, 2),
+        ],
+    );
+    assert!(
+        analyse(&d).unwrap().anomalies.is_empty(),
+        "got {:?}",
+        kinds(&d)
+    );
 }
 
 #[test]
 fn overlapping_partitions_flagged() {
-    let d = build(1000, &[ent("Apple_HFS", 64, 500, 2), ent("Apple_HFS", 300, 400, 2)]);
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::OverlappingPartitions { .. })));
+    let d = build(
+        1000,
+        &[ent("Apple_HFS", 64, 500, 2), ent("Apple_HFS", 300, 400, 2)],
+    );
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::OverlappingPartitions { .. })));
 }
 
 #[test]
 fn out_of_bounds_flagged() {
     // Device has 100 blocks; partition runs to block 563.
     let d = build(100, &[ent("Apple_HFS", 64, 500, 1)]);
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::PartitionOutOfBounds { .. })));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::PartitionOutOfBounds { .. })));
 }
 
 #[test]
 fn map_count_mismatch_flagged() {
     // Two entries that disagree on pmMapBlkCnt.
-    let d = build(1000, &[ent("Apple_partition_map", 1, 63, 2), ent("Apple_HFS", 64, 100, 9)]);
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::MapCountMismatch { .. })));
+    let d = build(
+        1000,
+        &[
+            ent("Apple_partition_map", 1, 63, 2),
+            ent("Apple_HFS", 64, 100, 9),
+        ],
+    );
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::MapCountMismatch { .. })));
 }
 
 #[test]
@@ -108,23 +147,32 @@ fn residual_entry_flagged() {
     let mut d = build(1000, &[ent("Apple_HFS", 64, 100, 1)]);
     let off = BS * 2;
     d[off..off + 2].copy_from_slice(b"PM");
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::ResidualEntry { .. })));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::ResidualEntry { .. })));
 }
 
 #[test]
 fn missing_partition_map_self_entry_flagged() {
     // No Apple_partition_map entry — the map must describe itself.
     let d = build(1000, &[ent("Apple_HFS", 64, 100, 1)]);
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::NoPartitionMapEntry)));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::NoPartitionMapEntry)));
 }
 
 #[test]
 fn unknown_partition_type_flagged() {
     let d = build(
         1000,
-        &[ent("Apple_partition_map", 1, 63, 2), ent("Sneaky_Hidden_Type", 64, 100, 2)],
+        &[
+            ent("Apple_partition_map", 1, 63, 2),
+            ent("Sneaky_Hidden_Type", 64, 100, 2),
+        ],
     );
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::UnknownPartitionType { .. })));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::UnknownPartitionType { .. })));
 }
 
 #[test]
@@ -133,13 +181,20 @@ fn unmapped_region_between_partitions_flagged() {
     // (free space is an Apple_Free entry), so an interior gap is hidden space.
     let d = build(
         1000,
-        &[ent("Apple_partition_map", 1, 63, 2), ent("Apple_HFS", 100, 100, 2)],
+        &[
+            ent("Apple_partition_map", 1, 63, 2),
+            ent("Apple_HFS", 100, 100, 2),
+        ],
     );
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::UnmappedRegion { .. })));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::UnmappedRegion { .. })));
 }
 
 #[test]
 fn zero_length_partition_flagged() {
     let d = build(1000, &[ent("Apple_Free", 64, 0, 1)]);
-    assert!(kinds(&d).iter().any(|a| matches!(a, AnomalyKind::ZeroLengthPartition { .. })));
+    assert!(kinds(&d)
+        .iter()
+        .any(|a| matches!(a, AnomalyKind::ZeroLengthPartition { .. })));
 }

@@ -74,9 +74,9 @@ impl AnomalyKind {
         use AnomalyKind as K;
         match self {
             K::OverlappingPartitions { .. } => Severity::Critical,
-            K::PartitionOutOfBounds { .. }
-            | K::ResidualEntry { .. }
-            | K::NoPartitionMapEntry => Severity::High,
+            K::PartitionOutOfBounds { .. } | K::ResidualEntry { .. } | K::NoPartitionMapEntry => {
+                Severity::High
+            }
             K::MapCountMismatch { .. } | K::UnmappedRegion { .. } => Severity::Medium,
             K::ZeroLengthPartition { .. } => Severity::Low,
             K::UnknownPartitionType { .. } => Severity::Info,
