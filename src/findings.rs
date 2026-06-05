@@ -55,6 +55,12 @@ pub enum AnomalyKind {
     ResidualEntry { block: u32 },
     /// A partition has a zero block count.
     ZeroLengthPartition { index: usize },
+    /// No entry of type `Apple_partition_map` — the map must describe itself, so
+    /// its absence is a structural anomaly / tampering signal.
+    NoPartitionMapEntry,
+    /// A partition's `pmPartType` is not a recognised APM type — possibly a
+    /// custom or hidden partition.
+    UnknownPartitionType { index: usize, type_name: String },
 }
 
 impl AnomalyKind {
@@ -64,9 +70,12 @@ impl AnomalyKind {
         use AnomalyKind as K;
         match self {
             K::OverlappingPartitions { .. } => Severity::Critical,
-            K::PartitionOutOfBounds { .. } | K::ResidualEntry { .. } => Severity::High,
+            K::PartitionOutOfBounds { .. }
+            | K::ResidualEntry { .. }
+            | K::NoPartitionMapEntry => Severity::High,
             K::MapCountMismatch { .. } => Severity::Medium,
             K::ZeroLengthPartition { .. } => Severity::Low,
+            K::UnknownPartitionType { .. } => Severity::Info,
         }
     }
 
@@ -80,6 +89,8 @@ impl AnomalyKind {
             K::PartitionOutOfBounds { .. } => "APM-PART-OOB",
             K::ResidualEntry { .. } => "APM-PART-RESIDUAL",
             K::ZeroLengthPartition { .. } => "APM-PART-ZEROLEN",
+            K::NoPartitionMapEntry => "APM-NO-MAP-ENTRY",
+            K::UnknownPartitionType { .. } => "APM-PART-UNKNOWN",
         }
     }
 
@@ -112,6 +123,12 @@ impl AnomalyKind {
                  — hidden or residual entry"
             ),
             K::ZeroLengthPartition { index } => format!("Partition {index} has a zero block count"),
+            K::NoPartitionMapEntry => {
+                "No Apple_partition_map entry — the map does not describe itself".to_string()
+            }
+            K::UnknownPartitionType { index, type_name } => {
+                format!("Partition {index}: unrecognised type \"{type_name}\" — possibly custom or hidden")
+            }
         }
     }
 }

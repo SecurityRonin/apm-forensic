@@ -6,9 +6,14 @@ version = 4
 name = "apm-forensic"
 version = "0.1.0"
 dependencies = [
+ "forensicnomicon",
  "serde",
  "serde_json",
 ]
+
+[[package]]
+name = "forensicnomicon"
+version = "0.1.0"
 
 [[package]]
 name = "itoa"

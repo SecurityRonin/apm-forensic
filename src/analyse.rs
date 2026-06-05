@@ -69,6 +69,23 @@ pub fn analyse(data: &[u8]) -> Result<ApmAnalysis, Error> {
         }
     }
 
+    // ── Partition types (knowledge from forensicnomicon) ────────────────────
+    if !map
+        .partitions
+        .iter()
+        .any(|p| p.type_name == forensicnomicon::apm::PARTITION_MAP_TYPE)
+    {
+        anomalies.push(Anomaly::new(AnomalyKind::NoPartitionMapEntry));
+    }
+    for (index, p) in map.partitions.iter().enumerate() {
+        if !forensicnomicon::apm::is_known_type(&p.type_name) {
+            anomalies.push(Anomaly::new(AnomalyKind::UnknownPartitionType {
+                index,
+                type_name: p.type_name.clone(),
+            }));
+        }
+    }
+
     // ── Residual entry: a PM signature beyond the declared map count ─────────
     if let Some(first) = map.partitions.first() {
         let declared = first.map_count as usize;
