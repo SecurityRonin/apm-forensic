@@ -8,12 +8,6 @@
 
 Reads the partition scheme on Apple hybrid optical discs and APM-formatted media, with no `unsafe` — and goes beyond enumeration to flag the structural anomalies a forensic examiner cares about: map-count mismatches, overlapping or out-of-bounds partitions, residual (deleted) entries, and unmapped regions that could hide data.
 
-## Command-line tool
-
-```console
-$ cargo run --bin apm-forensic -- disk.img
-```
-
 ```text
 APM Forensic Analysis
   block size     : 512 bytes
@@ -28,8 +22,11 @@ Anomalies: none
 Highest severity: none (clean)
 ```
 
-The binary exits `0` when clean and `1` when any anomaly is present. Add `--json`
-(with `--features serde`) for machine-readable output.
+`apm-forensic` is a **library** (use `apm_forensic::report::text_report` to render
+the above). For a ready-made command line that auto-detects the scheme and prints
+this for *any* disk, install the unified
+[`disk4n6`](https://github.com/SecurityRonin/disk-forensic) tool
+(`cargo install disk-forensic`).
 
 ## Install
 
