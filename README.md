@@ -98,7 +98,7 @@ Tested against a **real `hdiutil`-created APM** (`Apple_partition_map` + `Apple_
 
 ## Related
 
-Part of the [Security Ronin](https://github.com/SecurityRonin) forensic toolkit. Sibling partition readers: [`gpt-forensic`](https://github.com/SecurityRonin/gpt-forensic), [`mbr-forensic`](https://github.com/SecurityRonin/mbr-forensic). Filesystems: [`hfsplus-forensic`](https://github.com/SecurityRonin/hfsplus-forensic), [`udf-forensic`](https://github.com/SecurityRonin/udf-forensic). Consumed by [`iso9660-forensic`](https://github.com/SecurityRonin/iso9660-forensic) for Apple hybrid discs.
+Part of the [Security Ronin](https://github.com/SecurityRonin) forensic toolkit. Sibling partition readers: [`gpt-forensic`](https://github.com/SecurityRonin/gpt-forensic), [`mbr-forensic`](https://github.com/SecurityRonin/mbr-forensic). The [`disk-forensic`](https://github.com/SecurityRonin/disk-forensic) orchestrator auto-detects the scheme and dispatches to whichever of the three fits. Filesystems: [`hfsplus-forensic`](https://github.com/SecurityRonin/hfsplus-forensic), [`udf-forensic`](https://github.com/SecurityRonin/udf-forensic). Consumed by [`iso9660-forensic`](https://github.com/SecurityRonin/iso9660-forensic) for Apple hybrid discs.
 
 ---
 
