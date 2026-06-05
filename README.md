@@ -6,7 +6,30 @@
 
 **Pure-Rust forensic Apple Partition Map (APM) reader — Driver Descriptor Map and partition entries from a byte buffer.**
 
-Reads the partition scheme on Apple hybrid optical discs and APM-formatted media, with no `unsafe`.
+Reads the partition scheme on Apple hybrid optical discs and APM-formatted media, with no `unsafe` — and goes beyond enumeration to flag the structural anomalies a forensic examiner cares about: map-count mismatches, overlapping or out-of-bounds partitions, residual (deleted) entries, and unmapped regions that could hide data.
+
+## Command-line tool
+
+```console
+$ cargo run --bin apm-forensic -- disk.img
+```
+
+```text
+APM Forensic Analysis
+  block size     : 512 bytes
+  device blocks  : 6144
+
+Partition map (2 entries):
+  [0] Apple                Apple_partition_map      blocks          1..=63
+  [1] disk image           Apple_HFS                blocks         64..=6143
+
+Anomalies: none
+
+Highest severity: none (clean)
+```
+
+The binary exits `0` when clean and `1` when any anomaly is present. Add `--json`
+(with `--features serde`) for machine-readable output.
 
 ## Install
 
@@ -39,6 +62,35 @@ if let Some(map) = apm_forensic::parse(&data) {
 | Driver Descriptor Map | `ER` signature, device block size |
 | Partition entries | `PM` entries: name, type, start block, block count |
 | HFS lookup | `hfs_partition()` finds the first `Apple_HFS` slice |
+
+## Forensic anomaly detection
+
+`parse()` gives you the layout; `analyse()` (byte slice) and `analyse_reader()`
+(any `Read + Seek`, for composing with container crates) add a severity-ranked
+anomaly pass:
+
+```rust
+let report = apm_forensic::analyse(&std::fs::read("disk.img")?)?;
+for a in &report.anomalies {
+    println!("[{}] {}: {}", a.severity, a.code, a.note);
+}
+# Ok::<(), apm_forensic::Error>(())
+```
+
+| Anomaly | Code | Severity |
+|---|---|---|
+| Overlapping partitions | `APM-PART-OVERLAP` | Critical |
+| Partition out of bounds | `APM-PART-OOB` | High |
+| Residual (deleted) entry | `APM-PART-RESIDUAL` | High |
+| Missing `Apple_partition_map` self-entry | `APM-NO-MAP-ENTRY` | High |
+| `pmMapBlkCnt` disagreement | `APM-MAP-COUNT` | Medium |
+| Unmapped region (possible hidden data) | `APM-UNMAPPED` | Medium |
+| Zero-length partition | `APM-PART-ZEROLEN` | Low |
+| Unknown partition type | `APM-PART-UNKNOWN` | Info |
+
+Partition-type strings are validated against the
+[`forensicnomicon`](https://github.com/SecurityRonin/forensicnomicon) knowledge
+base. The reader is fuzz-tested (`cargo fuzz`) to never panic on malformed input.
 
 ## Validation
 
