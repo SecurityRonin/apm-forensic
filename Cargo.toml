@@ -15,7 +15,7 @@ categories = ["parser-implementations", "filesystem"]
 [dependencies]
 serde = { version = "1", features = ["derive"], optional = true }
 # Knowledge layer (sibling repo): Apple Partition Map partition-type strings.
-forensicnomicon = { version = "0.3.0", path = "../forensicnomicon" }
+forensicnomicon = "0.3.1"
 
 [features]
 default = []
