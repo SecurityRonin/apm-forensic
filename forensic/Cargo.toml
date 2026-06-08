@@ -8,7 +8,6 @@ description = "Forensic anomaly auditor for Apple Partition Maps — map-count m
 repository = "https://github.com/SecurityRonin/apm-partition-forensic"
 homepage = "https://github.com/SecurityRonin/apm-partition-forensic"
 documentation = "https://docs.rs/apm-partition-forensic"
-readme = "README.md"
 keywords = ["forensics", "apple", "partition", "apm", "dfir"]
 categories = ["parser-implementations", "filesystem"]
 
