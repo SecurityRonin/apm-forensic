@@ -1,12 +1,25 @@
-[![Crates.io](https://img.shields.io/crates/v/apm-partition-forensic.svg)](https://crates.io/crates/apm-partition-forensic)
+# apm-partition-forensic
+
+[![Crates.io: core](https://img.shields.io/crates/v/apm-partition-core.svg?label=apm-partition-core)](https://crates.io/crates/apm-partition-core)
+[![Crates.io: forensic](https://img.shields.io/crates/v/apm-partition-forensic.svg?label=apm-partition-forensic)](https://crates.io/crates/apm-partition-forensic)
 [![docs.rs](https://img.shields.io/docsrs/apm-partition-forensic)](https://docs.rs/apm-partition-forensic)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/SecurityRonin/apm-partition-forensic/actions/workflows/ci.yml/badge.svg)](https://github.com/SecurityRonin/apm-partition-forensic/actions)
 [![Sponsor](https://img.shields.io/badge/sponsor-h4x0r-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/h4x0r)
 
-**Pure-Rust forensic Apple Partition Map (APM) reader — Driver Descriptor Map and partition entries from a byte buffer.**
+**Read an Apple Partition Map — then grade its structural anomalies into severity-ranked forensic findings.**
 
-Reads the partition scheme on Apple hybrid optical discs and APM-formatted media, with no `unsafe` — and goes beyond enumeration to flag the structural anomalies a forensic examiner cares about: map-count mismatches, overlapping or out-of-bounds partitions, residual (deleted) entries, and unmapped regions that could hide data.
+A read-only APM reader (Driver Descriptor Map + partition entries: name, type, bounds) paired with an anomaly auditor that flags exactly what a forensic examiner looks for: map-count disagreement, overlapping or out-of-bounds partitions, residual (hidden) entries, and unmapped interior regions that could conceal data. Pure Rust, no `unsafe`.
+
+```rust
+use apm_forensic::analyse;
+
+let report = analyse(&std::fs::read("disk.img")?)?;
+for a in &report.anomalies {
+    println!("[{}] {}: {}", a.severity, a.code, a.note);
+}
+# Ok::<(), apm_forensic::Error>(())
+```
 
 ```text
 APM Forensic Analysis
@@ -27,16 +40,22 @@ auto-detects the scheme and prints this for *any* disk, install the unified
 [`disk4n6`](https://github.com/SecurityRonin/disk-forensic) tool
 (`cargo install disk-forensic`).
 
-The workspace ships two crates: the pure parser
-[`apm-partition-core`](https://crates.io/crates/apm-partition-core) (imported as
-`apm`) and the forensic analyzer `apm-partition-forensic` (imported as
-`apm_forensic`) built on top of it.
+## Two crates
+
+| Crate | Import as | Role |
+|---|---|---|
+| [`apm-partition-core`](https://crates.io/crates/apm-partition-core) | `apm` | Read-only reader: Driver Descriptor Map + partition entries (`parse`, `ApplePartitionMap`, `ApmPartition`) |
+| [`apm-partition-forensic`](https://crates.io/crates/apm-partition-forensic) | `apm_forensic` | Anomaly auditor: `analyse` / `analyse_reader` → graded `Anomaly` findings, built on the reader |
+
+The forensic crate re-exports the reader's `parse`, `ApplePartitionMap`, `ApmPartition`, and `Error`, so depending on it alone gives you both layers.
 
 ## Install
 
 ```toml
 [dependencies]
-apm-partition-forensic = "0.4"
+apm-partition-forensic = "0.4"   # analyzer + re-exported reader
+# or, reader only:
+apm-partition-core = "0.4"
 ```
 
 ## Quick start
@@ -89,13 +108,20 @@ for a in &report.anomalies {
 | Zero-length partition | `APM-PART-ZEROLEN` | Low |
 | Unknown partition type | `APM-PART-UNKNOWN` | Info |
 
-Partition-type strings are validated against the
+Partition-type strings are graded against the
 [`forensicnomicon`](https://github.com/SecurityRonin/forensicnomicon) knowledge
-base. The reader is fuzz-tested (`cargo fuzz`) to never panic on malformed input.
+base. Each anomaly is an *observation* ("consistent with …"), never a verdict —
+the examiner draws the conclusion.
 
-## Validation
+## Trust, but verify
 
-Tested against a **real `hdiutil`-created APM** (`Apple_partition_map` + `Apple_HFS` entries), so the layout is checked against genuine Apple output.
+These crates parse untrusted, attacker-controllable disk images, so the bar is
+*never panic, never read out of bounds, never trust a length field*:
+
+- **Panic-free** — production code carries no `unwrap`/`expect`/`panic!`, enforced as a hard `deny` by the workspace lints; integers are read through bounds-checked helpers that return `0` rather than panicking on a short slice, and the entry count is capped (`MAX_PARTITIONS`) against a corrupt map.
+- **Fuzzed** — `cargo fuzz` targets drive the `parse` reader and the full `analyse` audit pipeline; the invariant is "must not panic" on any input.
+- **Real-artifact validated** — tested against a real `hdiutil`-created APM (`Apple_partition_map` + `Apple_HFS` entries), so the layout is checked against genuine Apple output, not only synthetic fixtures.
+- **No `unsafe`** — `unsafe_code = "forbid"` across the workspace.
 
 ## Related
 
