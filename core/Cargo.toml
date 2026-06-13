@@ -3,7 +3,7 @@
 # we publish the reader as `apm-partition-core` while keeping the ergonomic
 # import path `use apm::…` via `[lib] name = "apm"`.
 name = "apm-partition-core"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 rust-version = "1.85"
 description = "Pure-Rust read-only Apple Partition Map (APM) reader — Driver Descriptor Map + partition entries (name, type, start, count) from a byte buffer"

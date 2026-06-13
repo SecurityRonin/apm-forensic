@@ -1,6 +1,6 @@
 [package]
 name = "apm-partition-forensic"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
@@ -15,10 +15,10 @@ categories = ["parser-implementations", "filesystem"]
 # `apm-partition-*` scheme; the import path stays `use apm_forensic::…` so
 # downstream code and tests are unaffected by the package rename.
 [dependencies]
-apm = { version = "0.4.1", path = "../core", package = "apm-partition-core" }
+apm = { version = "0.5.0", path = "../core", package = "apm-partition-core" }
 serde = { version = "1", features = ["derive"], optional = true }
 # Knowledge layer (sibling repo): Apple Partition Map partition-type strings.
-forensicnomicon = "0.3.1"
+forensicnomicon = "0.5"
 
 [features]
 default = []
